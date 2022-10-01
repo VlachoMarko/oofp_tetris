@@ -74,7 +74,7 @@ class oTetromino(override var anchor: Point) extends Tetromino {
 
 class iTetromino(override var anchor: Point) extends Tetromino {
 
-  private var relativePoints: Vector[Point] = Vector[Point](Point(-1,0), Point(1,0), Point(2,0))
+  private var relativePoints: Vector[Point] = Vector[Point](Point(-1, 0), Point(1, 0), Point(2, 0))
 
   var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
   blockType = ICell
