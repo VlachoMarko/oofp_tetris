@@ -55,7 +55,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
     else Empty
   }
 
-  def getAnchor: Point ={
+  def getAnchor: Point = {
     val x : Int = if (gridDims.width % 2 == 0) gridDims.width/2-1 else gridDims.width/2
     val y : Int = 1
 

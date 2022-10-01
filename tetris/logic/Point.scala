@@ -19,12 +19,12 @@ object Point{
     res
   }
 
-  def centerRotateRight(p: Point)(anchor: Point): Point = {
-    val res = Point(-p.y, p.x)
+  def centerRotateRight(p: Point): Point = {
+    val res: Point = Point(-p.y, p.x)
     res
   }
 
-  def centerRotateLeft(p: Point)(anchor: Point): Point = {
+  def centerRotateLeft(p: Point): Point = {
     val res: Point = Point(p.y, -p.x)
     res
   }

@@ -9,11 +9,11 @@ abstract class Tetromino {
   var blockType : CellType = Empty
   var anchor : Point
 
-  final def JBody: (Point, Point, Point) = (Point(-1,-1), Point(-1,0), Point(1,0))
-  final def LBody: (Point, Point, Point) = (Point(-1,0), Point(1,0), Point(1,-1))
-  final def SBody: (Point, Point, Point) = (Point(-1,0), Point(0,-1), Point(1,-1))
-  final def TBody: (Point, Point, Point) = (Point(-1,0), Point(0,-1), Point(1,0))
-  final def ZBody: (Point, Point, Point) = (Point(-1,-1), Point(0,-1), Point(1,0))
+  final def JBody: Vector[Point] = Vector[Point](Point(-1,-1), Point(-1,0), Point(1,0))
+  final def LBody: Vector[Point] = Vector[Point](Point(-1,0), Point(1,0), Point(1,-1))
+  final def SBody: Vector[Point] = Vector[Point](Point(-1,0), Point(0,-1), Point(1,-1))
+  final def TBody: Vector[Point] = Vector[Point](Point(-1,0), Point(0,-1), Point(1,0))
+  final def ZBody: Vector[Point] = Vector[Point](Point(-1,-1), Point(0,-1), Point(1,0))
 
 
   def rotateLeft(): Unit
@@ -23,27 +23,39 @@ abstract class Tetromino {
 
 class centeredTetromino(randomType: Int, override var anchor: Point) extends Tetromino {
   var bodyBlocks: Vector[Point] = Vector[Point]()
+  private var relativePoints : Vector[Point] = Vector[Point]()
   setVars()
 
 
   override def rotateLeft(): Unit = {
-    bodyBlocks = bodyBlocks.map(centerRotateLeft(anchor))
-    println("we here1: " + bodyBlocks)
+    rotation(centerRotateLeft)
+    println("we left: " + bodyBlocks)
   }
+
 
   override def rotateRight(): Unit = {
-    bodyBlocks = bodyBlocks.map(centerRotateRight(anchor))
-    println("we here2: " + bodyBlocks)
+    rotation(centerRotateRight)
+    println("we right: " + bodyBlocks)
   }
 
+  def rotation(f: Point => Point): Unit = {
 
+    relativePoints = relativePoints.map(f)
+    val tempPoints = relativePoints
+
+    bodyBlocks = bodyBlocks.filter(notAnchor)
+    bodyBlocks = tempPoints.map(add(_, anchor))
+    bodyBlocks = bodyBlocks :+ anchor
+  }
+
+  def notAnchor (p: Point): Boolean = p != anchor
   def setVars(): Unit = {
     randomType match {
-      case 1 => setBlocksAndType(this, JCell, getBodyBlocks(super.JBody, anchor))
-      case 2 => setBlocksAndType(this, LCell, getBodyBlocks(super.LBody, anchor))
-      case 4 => setBlocksAndType(this, SCell, getBodyBlocks(super.SBody, anchor))
-      case 5 => setBlocksAndType(this, TCell, getBodyBlocks(super.TBody, anchor))
-      case 6 => setBlocksAndType(this, ZCell, getBodyBlocks(super.ZBody, anchor))
+      case 1 => setBlocksAndType(this, JCell, getBodyBlocks(super.JBody, anchor)); relativePoints = JBody
+      case 2 => setBlocksAndType(this, LCell, getBodyBlocks(super.LBody, anchor)); relativePoints = LBody
+      case 4 => setBlocksAndType(this, SCell, getBodyBlocks(super.SBody, anchor)); relativePoints = SBody
+      case 5 => setBlocksAndType(this, TCell, getBodyBlocks(super.TBody, anchor)); relativePoints = TBody
+      case 6 => setBlocksAndType(this, ZCell, getBodyBlocks(super.ZBody, anchor)); relativePoints = ZBody
     }
   }
 
@@ -52,8 +64,8 @@ class centeredTetromino(randomType: Int, override var anchor: Point) extends Tet
 
 class oTetromino(override var anchor: Point) extends Tetromino {
 
-  private def oBody: (Point, Point, Point) = (Point(0, -1), Point(1, -1), Point(1, 0))
-  var bodyBlocks: Vector[Point] = getBodyBlocks(oBody, anchor)
+  private var relativePoints: Vector[Point] = Vector[Point](Point(0, -1), Point(1, -1), Point(1, 0))
+  var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
   blockType = OCell
 
   def rotateLeft(): Unit = ()
@@ -62,9 +74,9 @@ class oTetromino(override var anchor: Point) extends Tetromino {
 
 class iTetromino(override var anchor: Point) extends Tetromino {
 
-  private def iBody: (Point, Point, Point) = (Point(-1,0), Point(1,0), Point(2,0))
+  private var relativePoints: Vector[Point] = Vector[Point](Point(-1,0), Point(1,0), Point(2,0))
 
-  var bodyBlocks: Vector[Point] = getBodyBlocks(iBody, anchor)
+  var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
   blockType = ICell
 
 
@@ -92,8 +104,8 @@ object Tetromino {
     thisT.bodyBlocks = body
   }
 
-  def getBodyBlocks(points: (Point, Point, Point), anchor: Point) : Vector[Point] = {
-    val res = Vector[Point](add(points._1, anchor), anchor, add(points._2, anchor), add(points._3, anchor))
+  def getBodyBlocks(points: Vector[Point], anchor: Point) : Vector[Point] = {
+    val res = Vector[Point](add(points(0), anchor), anchor, add(points(1), anchor), add(points(2), anchor))
     res
   }
 
