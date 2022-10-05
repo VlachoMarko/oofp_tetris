@@ -1,61 +1,57 @@
 package tetris.logic
 
-import tetris.logic.Point.{add, centerRotateLeft, centerRotateRight}
-import tetris.logic.Tetromino.{getBodyBlocks, setBlocksAndType}
+import tetris.logic.Point.{add, centerRotateLeft, centerRotateRight, iRotateLeft, iRotateRight, pDown, pLeft, pRight}
+import tetris.logic.Tetromino.{getBodyBlocks, getRelPoints, rotation, setBodyAndType}
 
 abstract class Tetromino {
 
   var bodyBlocks : Vector[Point]
+  var relativePoints : Vector[Point]
   var blockType : CellType = Empty
   var anchor : Point
-
-  final def JBody: Vector[Point] = Vector[Point](Point(-1,-1), Point(-1,0), Point(1,0))
-  final def LBody: Vector[Point] = Vector[Point](Point(-1,0), Point(1,0), Point(1,-1))
-  final def SBody: Vector[Point] = Vector[Point](Point(-1,0), Point(0,-1), Point(1,-1))
-  final def TBody: Vector[Point] = Vector[Point](Point(-1,0), Point(0,-1), Point(1,0))
-  final def ZBody: Vector[Point] = Vector[Point](Point(-1,-1), Point(0,-1), Point(1,0))
 
 
   def rotateLeft(): Unit
   def rotateRight(): Unit
 
+  def moveDown(): Boolean = {
+    val tempBody = bodyBlocks
+    bodyBlocks = bodyBlocks.map(pDown)
+
+    tempBody == bodyBlocks
+  }
+
+  def moveLeft(): Unit = {
+    bodyBlocks = bodyBlocks.map(pLeft)
+  }
+
+  def moveRight(): Unit = {
+    bodyBlocks = bodyBlocks.map(pRight)
+  }
+
 }
 
 class centeredTetromino(randomType: Int, override var anchor: Point) extends Tetromino {
   var bodyBlocks: Vector[Point] = Vector[Point]()
-  private var relativePoints : Vector[Point] = Vector[Point]()
+  var relativePoints : Vector[Point] = Vector[Point]()
   setVars()
 
 
   override def rotateLeft(): Unit = {
-    rotation(centerRotateLeft)
-    println("we left: " + bodyBlocks)
+    rotation(this, centerRotateLeft)
   }
 
 
   override def rotateRight(): Unit = {
-    rotation(centerRotateRight)
-    println("we right: " + bodyBlocks)
+    rotation(this, centerRotateRight)
   }
-
-  def rotation(f: Point => Point): Unit = {
-
-    relativePoints = relativePoints.map(f)
-    val tempPoints = relativePoints
-
-    bodyBlocks = bodyBlocks.filter(notAnchor)
-    bodyBlocks = tempPoints.map(add(_, anchor))
-    bodyBlocks = bodyBlocks :+ anchor
-  }
-
-  def notAnchor (p: Point): Boolean = p != anchor
   def setVars(): Unit = {
     randomType match {
-      case 1 => setBlocksAndType(this, JCell, getBodyBlocks(super.JBody, anchor)); relativePoints = JBody
-      case 2 => setBlocksAndType(this, LCell, getBodyBlocks(super.LBody, anchor)); relativePoints = LBody
-      case 4 => setBlocksAndType(this, SCell, getBodyBlocks(super.SBody, anchor)); relativePoints = SBody
-      case 5 => setBlocksAndType(this, TCell, getBodyBlocks(super.TBody, anchor)); relativePoints = TBody
-      case 6 => setBlocksAndType(this, ZCell, getBodyBlocks(super.ZBody, anchor)); relativePoints = ZBody
+      case 1 => setBodyAndType(this, getBodyBlocks(getRelPoints(JCell), anchor), JCell);
+      case 2 => setBodyAndType(this, getBodyBlocks(getRelPoints(LCell), anchor), LCell);
+      case 4 => setBodyAndType(this, getBodyBlocks(getRelPoints(SCell), anchor), SCell);
+      case 5 => setBodyAndType(this, getBodyBlocks(getRelPoints(TCell), anchor), TCell);
+      case 6 => setBodyAndType(this, getBodyBlocks(getRelPoints(ZCell), anchor), ZCell);
     }
   }
 
@@ -64,34 +60,37 @@ class centeredTetromino(randomType: Int, override var anchor: Point) extends Tet
 
 class oTetromino(override var anchor: Point) extends Tetromino {
 
-  private var relativePoints: Vector[Point] = Vector[Point](Point(0, -1), Point(1, -1), Point(1, 0))
+  var relativePoints: Vector[Point] = Vector[Point](Point(0, -1), Point(1, -1), Point(1, 0))
   var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
   blockType = OCell
 
-  def rotateLeft(): Unit = ()
-  def rotateRight(): Unit = ()
+  override def rotateLeft(): Unit = ()
+  override def rotateRight(): Unit = ()
 }
 
 class iTetromino(override var anchor: Point) extends Tetromino {
 
-  private var relativePoints: Vector[Point] = Vector[Point](Point(-1, 0), Point(1, 0), Point(2, 0))
+  var relativePoints: Vector[Point] = Vector[Point](Point(-1, 0), Point(1, 0), Point(2, 0), Point(0,0))
 
   var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
   blockType = ICell
 
 
-  def rotateLeft(): Unit = {
+  override def rotateLeft(): Unit = {
+    relativePoints = relativePoints.map(iRotateLeft)
+    bodyBlocks = relativePoints.map(add(_, anchor))
   }
 
-  def rotateRight(): Unit = {
-
+  override def rotateRight(): Unit = {
+    relativePoints = relativePoints.map(iRotateRight)
+    bodyBlocks = relativePoints.map(add(_, anchor))
   }
 
 }
 
 object Tetromino {
 
-  def getTetrominoType(randomNumber : Int, anchor: Point): Tetromino = {
+  def getNewTetromino(randomNumber : Int, anchor: Point): Tetromino = {
     randomNumber match {
       case 0 => new iTetromino(anchor)
       case 3 => new oTetromino(anchor)
@@ -99,9 +98,10 @@ object Tetromino {
     }
   }
 
-  def setBlocksAndType(thisT: Tetromino, cell: CellType, body: Vector[Point]):Unit = {
-    thisT.blockType = cell
+  def setBodyAndType(thisT: Tetromino, body: Vector[Point], cell: CellType):Unit = {
+    thisT.relativePoints = getRelPoints(cell)
     thisT.bodyBlocks = body
+    thisT.blockType = cell
   }
 
   def getBodyBlocks(points: Vector[Point], anchor: Point) : Vector[Point] = {
@@ -109,12 +109,28 @@ object Tetromino {
     res
   }
 
+  def rotation(thisT : Tetromino, f: Point => Point): Unit = {
+
+    thisT.relativePoints = thisT.relativePoints.map(f)
+    val tempPoints = thisT.relativePoints.map(add(_, thisT.anchor))
+
+    thisT.bodyBlocks = thisT.bodyBlocks.filter(notAnchor(thisT.anchor))
+    thisT.bodyBlocks = tempPoints :+ thisT.anchor
+
+  }
+
+  def notAnchor (p: Point) (anchor: Point): Boolean = p != anchor
+
+  def getRelPoints(cell: CellType): Vector[Point] = {
+    cell match {
+      case JCell => Vector[Point](Point(-1, -1), Point(-1, 0), Point(1, 0))
+      case LCell => Vector[Point](Point(-1, 0), Point(1, 0), Point(1, -1))
+      case SCell => Vector[Point](Point(-1, 0), Point(0, -1), Point(1, -1))
+      case TCell => Vector[Point](Point(-1, 0), Point(0, -1), Point(1, 0))
+      case ZCell => Vector[Point](Point(-1, -1), Point(0, -1), Point(1, 0))
+    }
+  }
 
 
-   /* def LBody(anchor:Point): Vector[Point] = {
-      val relativePoints =
-      val res = getBodyBlocks(relativePoints, anchor)
-      res
-    }*/
 
 }
