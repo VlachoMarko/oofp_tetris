@@ -20,13 +20,33 @@ object Point{
   }
 
   def centerRotateRight(p: Point): Point = {
-    val res: Point = Point(-p.y, p.x)
-    res
-  }
+    Point(-p.y, p.x)
+    }
 
   def centerRotateLeft(p: Point): Point = {
-    val res: Point = Point(p.y, -p.x)
-    res
+    Point(p.y, -p.x)
   }
+
+  def iRotateRight(p: Point): Point = {
+    Point(-p.y + 1, p.x)
+  }
+  def iRotateLeft(p: Point): Point ={
+    Point(p.y, -p.x + 1)
+  }
+
+  def pDown(p: Point): Point = {
+    Point(p.x, p.y+1)
+  }
+
+  def pLeft(p: Point): Point = {
+    Point(p.x - 1, p.y)
+  }
+
+  def pRight(p: Point): Point = {
+    Point(p.x + 1, p.y)
+  }
+
+
+
 
 }
