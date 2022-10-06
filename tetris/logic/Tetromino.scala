@@ -14,19 +14,19 @@ abstract class Tetromino {
   def rotateLeft(): Unit
   def rotateRight(): Unit
 
-  def moveDown(): Unit = {
-    this.bodyBlocks = this.bodyBlocks.map(pDown)
+  def moveDown(): Vector[Point] = {
     this.anchor = pDown(anchor)
+    this.bodyBlocks.map(pDown)
   }
 
-  def moveLeft(): Unit = {
-    this.bodyBlocks = this.bodyBlocks.map(pLeft)
+  def moveLeft(): Vector[Point] = {
     this.anchor = pLeft(anchor)
+    this.bodyBlocks.map(pLeft)
   }
 
-  def moveRight(): Unit = {
-    this.bodyBlocks = this.bodyBlocks.map(pRight)
+  def moveRight(): Vector[Point] = {
     this.anchor = pRight(anchor)
+    this.bodyBlocks.map(pRight)
   }
 
 }
@@ -43,8 +43,6 @@ class centeredTetromino(randomType: Int, override var anchor: Point) extends Tet
   override def rotateRight(): Unit = {
     rotation(this, centerRotateRight)
   }
-
-
 
 
 
@@ -78,14 +76,16 @@ class iTetromino(override var anchor: Point) extends Tetromino {
   blockType = ICell
 
 
-  override def rotateLeft(): Unit = {
+  override def rotateLeft(): Unit  = {
     relativePoints = relativePoints.map(iRotateLeft)
     bodyBlocks = relativePoints.map(add(_, anchor))
+
   }
 
   override def rotateRight(): Unit = {
     relativePoints = relativePoints.map(iRotateRight)
     bodyBlocks = relativePoints.map(add(_, anchor))
+
   }
 
 }
