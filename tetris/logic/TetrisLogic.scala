@@ -3,6 +3,7 @@ package tetris.logic
 import engine.random.{RandomGenerator, ScalaRandomGen}
 import tetris.logic.TetrisLogic._
 import tetris.logic.Tetromino.getNewTetromino
+import tetris.logic.Board.{getInitial, isInitial, noInitialCollision}
 
 /** To implement Tetris, complete the ``TODOs`` below.
  *
@@ -15,11 +16,10 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
   var randomNumber : Int = randomGen.randomInt(7)
 
-  var boardPoints : Seq[Point] = getBoardPoints(gridDims)
-  println("boardPoints: " + boardPoints)
+  val board: Board = new Board(getBoardPoints(gridDims), initialBoard.flatten)
 
   var activeTetromino: Tetromino = getNewTetromino(randomNumber, getAnchor)
-  println("starter body: " + activeTetromino.bodyBlocks)
+  // println("starter body: " + activeTetromino.bodyBlocks)
 
   var storedTetrominos: Vector[Tetromino] = Vector[Tetromino]()
 
@@ -34,29 +34,49 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
 
   def rotateLeft(): Unit = {
+    val tempBody = activeTetromino.bodyBlocks
+    val tempRelPoints = activeTetromino.relativePoints
     activeTetromino.rotateLeft()
+    if (!isLegalMove) {
+      activeTetromino.bodyBlocks = tempBody
+      activeTetromino.relativePoints = tempRelPoints
+    }
+
   }
 
   def rotateRight(): Unit = {
+    val tempBody = activeTetromino.bodyBlocks
+    val tempRelPoints = activeTetromino.relativePoints
+    println("before: " + activeTetromino.bodyBlocks)
     activeTetromino.rotateRight()
+
+    if (!isLegalMove) {
+      activeTetromino.bodyBlocks = tempBody
+      activeTetromino.relativePoints = tempRelPoints
+    }
+
+    println("after: " + activeTetromino.bodyBlocks)
+
   }
 
 
   def moveLeft(): Unit = {
     val tempBody = activeTetromino.bodyBlocks
+    val tempRelPoints = activeTetromino.relativePoints
     activeTetromino.moveLeft()
     if (!isLegalMove) {
       activeTetromino.bodyBlocks = tempBody
-      storedTetrominos = storedTetrominos :+ activeTetromino
+      activeTetromino.relativePoints = tempRelPoints
     }
   }
 
   def moveRight(): Unit = {
     val tempBody = activeTetromino.bodyBlocks
+    val tempRelPoints = activeTetromino.relativePoints
     activeTetromino.moveRight()
     if (!isLegalMove) {
       activeTetromino.bodyBlocks = tempBody
-      storedTetrominos = storedTetrominos :+ activeTetromino
+      activeTetromino.relativePoints = tempRelPoints
     }
   }
 
@@ -68,17 +88,19 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
   def moveDown(): Unit = {
     val tempBody = activeTetromino.bodyBlocks
+    val tempRelPoints = activeTetromino.relativePoints
     activeTetromino.moveDown()
 
     if (!isLegalMove) {
       activeTetromino.bodyBlocks = tempBody
+      activeTetromino.relativePoints = tempRelPoints
       storedTetrominos = storedTetrominos :+ activeTetromino
       spawnTetromino()
     }
   }
 
   def isLegalMove : Boolean = {
-    activeTetromino.bodyBlocks.forall(onBoard(_)(boardPoints)) && activeTetromino.bodyBlocks.forall(noCollision(_)(storedTetrominos))
+    activeTetromino.bodyBlocks.forall(onBoard(_)(board.boardPoints)) && activeTetromino.bodyBlocks.forall(noCollision(_)(storedTetrominos)) && noInitialCollision(activeTetromino, board)
   }
 
   // TODO implement me
@@ -91,6 +113,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
   def getCellType(p : Point): CellType = {
 
     if (activeTetromino.bodyBlocks.contains(p)) activeTetromino.blockType
+    else if(isInitial(p, board)) getInitial(p, board)
     else getIfStored(storedTetrominos, p)
   }
 
@@ -123,18 +146,14 @@ object TetrisLogic {
   }
 
   def onBoard(p: Point) (boardPoints : Seq[Point]) : Boolean = {
+    // println("onboard: " + boardPoints.contains(p))
     boardPoints.contains(p)
   }
 
   def noCollision(p: Point)(stored : Seq[Tetromino]) : Boolean = {
     for (i <- stored.indices) {
-      if (stored(i).bodyBlocks.contains(p)) return false
+      if (stored(i).bodyBlocks.contains(p)) println(stored(i).bodyBlocks + " / " + p) ; return false
     }
-    true
-  }
-
-  def noInitialCollision(): Boolean = {
-    // TODO: Check for each square that ActiveTetromino has, if in initialBoard it has a celltype other than Empty
     true
   }
 
