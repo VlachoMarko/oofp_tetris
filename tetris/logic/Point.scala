@@ -4,7 +4,6 @@ package tetris.logic
 
 case class Point(var x : Int, var y : Int) {
 
-
 }
 
 object Point{

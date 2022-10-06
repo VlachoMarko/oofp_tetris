@@ -14,19 +14,19 @@ abstract class Tetromino {
   def rotateLeft(): Unit
   def rotateRight(): Unit
 
-  def moveDown(): Boolean = {
-    val tempBody = bodyBlocks
-    bodyBlocks = bodyBlocks.map(pDown)
-
-    tempBody == bodyBlocks
+  def moveDown(): Unit = {
+    this.bodyBlocks = this.bodyBlocks.map(pDown)
+    this.anchor = pDown(anchor)
   }
 
   def moveLeft(): Unit = {
-    bodyBlocks = bodyBlocks.map(pLeft)
+    this.bodyBlocks = this.bodyBlocks.map(pLeft)
+    this.anchor = pLeft(anchor)
   }
 
   def moveRight(): Unit = {
-    bodyBlocks = bodyBlocks.map(pRight)
+    this.bodyBlocks = this.bodyBlocks.map(pRight)
+    this.anchor = pRight(anchor)
   }
 
 }
@@ -36,15 +36,18 @@ class centeredTetromino(randomType: Int, override var anchor: Point) extends Tet
   var relativePoints : Vector[Point] = Vector[Point]()
   setVars()
 
-
   override def rotateLeft(): Unit = {
     rotation(this, centerRotateLeft)
   }
 
-
   override def rotateRight(): Unit = {
     rotation(this, centerRotateRight)
   }
+
+
+
+
+
   def setVars(): Unit = {
     randomType match {
       case 1 => setBodyAndType(this, getBodyBlocks(getRelPoints(JCell), anchor), JCell);
@@ -71,7 +74,6 @@ class oTetromino(override var anchor: Point) extends Tetromino {
 class iTetromino(override var anchor: Point) extends Tetromino {
 
   var relativePoints: Vector[Point] = Vector[Point](Point(-1, 0), Point(1, 0), Point(2, 0), Point(0,0))
-
   var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
   blockType = ICell
 
