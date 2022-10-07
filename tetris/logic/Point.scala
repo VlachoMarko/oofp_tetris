@@ -3,7 +3,7 @@ package tetris.logic
 // you can alter this file!
 
 case class Point(var x : Int, var y : Int) {
-
+  var celltype : CellType = Empty
 }
 
 object Point{
