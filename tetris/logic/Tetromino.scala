@@ -31,7 +31,7 @@ abstract class Tetromino {
 
 }
 
-class centeredTetromino(randomType: Int, override var anchor: Point) extends Tetromino {
+case class centeredTetromino(override var anchor: Point, var randomType: Int = 0) extends Tetromino {
   var bodyBlocks: Vector[Point] = Vector[Point]()
   var relativePoints : Vector[Point] = Vector[Point]()
   setVars()
@@ -53,13 +53,14 @@ class centeredTetromino(randomType: Int, override var anchor: Point) extends Tet
       case 4 => setBodyAndType(this, getBodyBlocks(getRelPoints(SCell), anchor), SCell);
       case 5 => setBodyAndType(this, getBodyBlocks(getRelPoints(TCell), anchor), TCell);
       case 6 => setBodyAndType(this, getBodyBlocks(getRelPoints(ZCell), anchor), ZCell);
+      case _ =>
     }
   }
 
 
 }
 
-class oTetromino(override var anchor: Point) extends Tetromino {
+case class oTetromino(override var anchor: Point) extends Tetromino {
 
   var relativePoints: Vector[Point] = Vector[Point](Point(0, -1), Point(1, -1), Point(1, 0))
   var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
@@ -69,7 +70,7 @@ class oTetromino(override var anchor: Point) extends Tetromino {
   override def rotateRight(): Unit = ()
 }
 
-class iTetromino(override var anchor: Point) extends Tetromino {
+case class iTetromino(override var anchor: Point) extends Tetromino {
 
   var relativePoints: Vector[Point] = Vector[Point](Point(-1, 0), Point(1, 0), Point(2, 0), Point(0,0))
   var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
@@ -94,9 +95,9 @@ object Tetromino {
 
   def getNewTetromino(randomNumber : Int, anchor: Point): Tetromino = {
     randomNumber match {
-      case 0 => new iTetromino(anchor)
-      case 3 => new oTetromino(anchor)
-      case _ => new centeredTetromino(randomNumber, anchor)
+      case 0 => iTetromino(anchor)
+      case 3 => oTetromino(anchor)
+      case _ => centeredTetromino(anchor, randomNumber)
     }
   }
 
