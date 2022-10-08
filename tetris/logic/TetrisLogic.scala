@@ -53,18 +53,18 @@ class TetrisLogic(val randomGen: RandomGenerator,
   }
 
   def moveDown(): Unit = {
-    if (reachedEnd(activeT.body, gridDims.height, board.storedTetrominos)) clearRows()
+    if (reachedEnd(activeT.body, gridDims.height, board.storedTetrominos)) {clearRows(); storeActive()}
     val temps = (activeT.body, activeT.relatives)
 
     activeT.body = activeT.moveDown()
 
     if (outOfBoard(activeT.body, gridDims, board.storedTetrominos)) {
       collisionHandler(temps)
-      board.storedTetrominos = board.storedTetrominos :+ activeT
+      storeActive()
       spawnTetromino()
     }
     else collisionHandler(temps)
-    if (activeT.body.isEmpty) spawnTetromino()
+    if (activeT.body.length < 4) {spawnTetromino()}
   }
 
 
@@ -77,13 +77,15 @@ class TetrisLogic(val randomGen: RandomGenerator,
     }
     collisionHandler(temps)
     clearRows()
-    board.storedTetrominos = board.storedTetrominos :+ activeT
+    storeActive()
     spawnTetromino()
   }
 
 
   // TODO implement me
   def isGameOver: Boolean = gameOver
+
+  def storeActive() : Unit = board.storedTetrominos = board.storedTetrominos :+ activeT
 
   def getCellType(p: Point): CellType = {
     if (activeT.body.contains(p)) activeT.bodyType
