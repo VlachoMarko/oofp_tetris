@@ -9,8 +9,6 @@ abstract class Tetromino {
   var relatives : Vector[Point]
   var bodyType : CellType = Empty
   var anchor : Point
-
-
   def rotateLeft(): Unit
   def rotateRight(): Unit
 
@@ -68,6 +66,7 @@ case class oTetromino(override var anchor: Point) extends Tetromino {
 
   override def rotateLeft(): Unit = ()
   override def rotateRight(): Unit = ()
+
 }
 
 case class iTetromino(override var anchor: Point) extends Tetromino {
@@ -101,10 +100,10 @@ object Tetromino {
     }
   }
 
-  def setBodyAndType(thisT: Tetromino, body: Vector[Point], cell: CellType):Unit = {
-    thisT.relatives = getRelPoints(cell)
+  def setBodyAndType(thisT: Tetromino, body: Vector[Point], bodytype: CellType):Unit = {
+    thisT.relatives = getRelPoints(bodytype)
     thisT.body = body
-    thisT.bodyType = cell
+    thisT.bodyType = bodytype
   }
 
   def getBodyBlocks(points: Vector[Point], anchor: Point) : Vector[Point] = {
