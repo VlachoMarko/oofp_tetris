@@ -15,6 +15,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
                   val initialBoard: Seq[Seq[CellType]]) {
 
   var randomNumber: Int = randomGen.randomInt(7)
+  var gameOver : Boolean = false
 
   var board: Board = new Board(getBoardPoints(gridDims), initialBoard.flatten)
   var activeT: Tetromino = getNewTetromino(randomNumber, getAnchor)
@@ -82,7 +83,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
 
   // TODO implement me
-  def isGameOver: Boolean = false
+  def isGameOver: Boolean = gameOver
 
   def getCellType(p: Point): CellType = {
     if (activeT.body.contains(p)) activeT.bodyType
@@ -96,7 +97,6 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
   def collisionHandler(tempVals: (Vector[Point], Vector[Point])): Unit = {
     if (!isLegalMove(activeT.body, board, board.storedTetrominos)) {
-      // println("collision!")
       activeT.body = tempVals._1
       activeT.relatives = tempVals._2
     }
@@ -105,7 +105,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
   def spawnTetromino(): Unit = {
     randomNumber = randomGen.randomInt(7)
     activeT = getNewTetromino(randomNumber, getAnchor)
-    // println("starter body: " + activeT.body)
+    if (!activeT.body.forall(notStored(_)(board.storedTetrominos))) gameOver = true
   }
 
   def clearRows(): Unit = {
@@ -118,10 +118,10 @@ class TetrisLogic(val randomGen: RandomGenerator,
         }
         activeT.body = activeT.body.filterNot(partOf(_)(row))
         downAfterClear(row)
-        println("row: " + row(0).y)
+        /*println("row: " + row(0).y)
         println("body1: " + board.storedTetrominos(0).body)
         if (board.storedTetrominos.length > 1) println("body2: " + board.storedTetrominos(1).body)
-        println("active: " + activeT.body)
+        println("active: " + activeT.body)*/
       }
     }
 
@@ -159,7 +159,6 @@ class TetrisLogic(val randomGen: RandomGenerator,
         }
       }
     }
-    // println("returnstored: " + board.storedTetrominos.head.body)
   }
 
   def setPointType(p: Point)(cellType: CellType): Unit = {
@@ -188,7 +187,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
     tempPoints = tempPoints.filter(partOf(_)(testPoints))
 
     if (tempPoints.length == testPoints.length) return true
-    else println("tempPoints: " + tempPoints)
+    // else println("tempPoints: " + tempPoints)
     false
   }
 
