@@ -5,9 +5,9 @@ import tetris.logic.Tetromino.{getBodyBlocks, getRelPoints, rotation, setBodyAnd
 
 abstract class Tetromino {
 
-  var bodyBlocks : Vector[Point]
-  var relativePoints : Vector[Point]
-  var blockType : CellType = Empty
+  var body : Vector[Point]
+  var relatives : Vector[Point]
+  var bodyType : CellType = Empty
   var anchor : Point
 
 
@@ -16,24 +16,24 @@ abstract class Tetromino {
 
   def moveDown(): Vector[Point] = {
     this.anchor = pDown(anchor)
-    this.bodyBlocks.map(pDown)
+    this.body.map(pDown)
   }
 
   def moveLeft(): Vector[Point] = {
     this.anchor = pLeft(anchor)
-    this.bodyBlocks.map(pLeft)
+    this.body.map(pLeft)
   }
 
   def moveRight(): Vector[Point] = {
     this.anchor = pRight(anchor)
-    this.bodyBlocks.map(pRight)
+    this.body.map(pRight)
   }
 
 }
 
 case class centeredTetromino(override var anchor: Point, var randomType: Int = 0) extends Tetromino {
-  var bodyBlocks: Vector[Point] = Vector[Point]()
-  var relativePoints : Vector[Point] = Vector[Point]()
+  var body: Vector[Point] = Vector[Point]()
+  var relatives : Vector[Point] = Vector[Point]()
   setVars()
 
   override def rotateLeft(): Unit = {
@@ -62,9 +62,9 @@ case class centeredTetromino(override var anchor: Point, var randomType: Int = 0
 
 case class oTetromino(override var anchor: Point) extends Tetromino {
 
-  var relativePoints: Vector[Point] = Vector[Point](Point(0, -1), Point(1, -1), Point(1, 0))
-  var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
-  blockType = OCell
+  var relatives: Vector[Point] = Vector[Point](Point(0, -1), Point(1, -1), Point(1, 0))
+  var body: Vector[Point] = getBodyBlocks(relatives, anchor)
+  bodyType = OCell
 
   override def rotateLeft(): Unit = ()
   override def rotateRight(): Unit = ()
@@ -72,20 +72,20 @@ case class oTetromino(override var anchor: Point) extends Tetromino {
 
 case class iTetromino(override var anchor: Point) extends Tetromino {
 
-  var relativePoints: Vector[Point] = Vector[Point](Point(-1, 0), Point(1, 0), Point(2, 0), Point(0,0))
-  var bodyBlocks: Vector[Point] = getBodyBlocks(relativePoints, anchor)
-  blockType = ICell
+  var relatives: Vector[Point] = Vector[Point](Point(-1, 0), Point(1, 0), Point(2, 0), Point(0,0))
+  var body: Vector[Point] = getBodyBlocks(relatives, anchor)
+  bodyType = ICell
 
 
   override def rotateLeft(): Unit  = {
-    relativePoints = relativePoints.map(iRotateLeft)
-    bodyBlocks = relativePoints.map(add(_, anchor))
+    relatives = relatives.map(iRotateLeft)
+    body = relatives.map(add(_, anchor))
 
   }
 
   override def rotateRight(): Unit = {
-    relativePoints = relativePoints.map(iRotateRight)
-    bodyBlocks = relativePoints.map(add(_, anchor))
+    relatives = relatives.map(iRotateRight)
+    body = relatives.map(add(_, anchor))
 
   }
 
@@ -102,9 +102,9 @@ object Tetromino {
   }
 
   def setBodyAndType(thisT: Tetromino, body: Vector[Point], cell: CellType):Unit = {
-    thisT.relativePoints = getRelPoints(cell)
-    thisT.bodyBlocks = body
-    thisT.blockType = cell
+    thisT.relatives = getRelPoints(cell)
+    thisT.body = body
+    thisT.bodyType = cell
   }
 
   def getBodyBlocks(points: Vector[Point], anchor: Point) : Vector[Point] = {
@@ -114,11 +114,11 @@ object Tetromino {
 
   def rotation(thisT : Tetromino, f: Point => Point): Unit = {
 
-    thisT.relativePoints = thisT.relativePoints.map(f)
-    val tempPoints = thisT.relativePoints.map(add(_, thisT.anchor))
+    thisT.relatives = thisT.relatives.map(f)
+    val tempPoints = thisT.relatives.map(add(_, thisT.anchor))
 
-    thisT.bodyBlocks = thisT.bodyBlocks.filter(notAnchor(thisT.anchor))
-    thisT.bodyBlocks = tempPoints :+ thisT.anchor
+    thisT.body = thisT.body.filter(notAnchor(thisT.anchor))
+    thisT.body = tempPoints :+ thisT.anchor
 
   }
 
