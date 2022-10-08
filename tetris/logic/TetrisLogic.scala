@@ -1,11 +1,9 @@
 package tetris.logic
 
 import engine.random.{RandomGenerator, ScalaRandomGen}
+import tetris.logic.Point.pDown
 import tetris.logic.TetrisLogic._
 import tetris.logic.Tetromino.getNewTetromino
-
-import java.awt.GridLayout
-
 
 /** To implement Tetris, complete the ``TODOs`` below.
  *
@@ -19,7 +17,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
   var randomNumber: Int = randomGen.randomInt(7)
 
   var board: Board = new Board(getBoardPoints(gridDims), initialBoard.flatten)
-  var activeTetromino: Tetromino = getNewTetromino(randomNumber, getAnchor)
+  var activeT: Tetromino = getNewTetromino(randomNumber, getAnchor)
 
   def this(random: RandomGenerator, gridDims: Dimensions) =
     this(random, gridDims, makeEmptyBoard(gridDims))
@@ -29,52 +27,52 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
 
   def rotateLeft(): Unit = {
-    val temps = (activeTetromino.bodyBlocks, activeTetromino.relativePoints)
-    activeTetromino.rotateLeft()
+    val temps = (activeT.body, activeT.relatives)
+    activeT.rotateLeft()
     collisionHandler(temps)
-
   }
 
   def rotateRight(): Unit = {
-    val temps = (activeTetromino.bodyBlocks, activeTetromino.relativePoints)
-    activeTetromino.rotateRight()
+    val temps = (activeT.body, activeT.relatives)
+    activeT.rotateRight()
     collisionHandler(temps)
   }
 
 
   def moveLeft(): Unit = {
-    val temps = (activeTetromino.bodyBlocks, activeTetromino.relativePoints)
-    activeTetromino.bodyBlocks = activeTetromino.moveLeft()
+    val temps = (activeT.body, activeT.relatives)
+    activeT.body = activeT.moveLeft()
     collisionHandler(temps)
   }
 
   def moveRight(): Unit = {
-    val temps = (activeTetromino.bodyBlocks, activeTetromino.relativePoints)
-    activeTetromino.bodyBlocks = activeTetromino.moveRight()
+    val temps = (activeT.body, activeT.relatives)
+    activeT.body = activeT.moveRight()
     collisionHandler(temps)
   }
 
   def moveDown(): Unit = {
-    if (atEnd(activeTetromino.bodyBlocks, gridDims.height)) clearRows()
-    val temps = (activeTetromino.bodyBlocks, activeTetromino.relativePoints)
+    if (reachedEnd(activeT.body, gridDims.height, board.storedTetrominos)) clearRows()
+    val temps = (activeT.body, activeT.relatives)
 
-    activeTetromino.bodyBlocks = activeTetromino.moveDown()
+    activeT.body = activeT.moveDown()
 
-    if (endOfBoard(activeTetromino.bodyBlocks, gridDims, board.storedTetrominos)) {
+    if (outOfBoard(activeT.body, gridDims, board.storedTetrominos)) {
       collisionHandler(temps)
-      board.storedTetrominos = board.storedTetrominos :+ activeTetromino
+      board.storedTetrominos = board.storedTetrominos :+ activeT
       spawnTetromino()
     }
     else collisionHandler(temps)
+    if (activeT.body.isEmpty) spawnTetromino()
   }
 
 
   def doHardDrop(): Unit = {
 
-    while (!endOfBoard(activeTetromino.bodyBlocks, gridDims, board.storedTetrominos)){
-      activeTetromino.bodyBlocks = activeTetromino.moveDown()
+    while (!outOfBoard(activeT.body, gridDims, board.storedTetrominos)){
+      activeT.body = activeT.moveDown()
     }
-    val temps = (activeTetromino.bodyBlocks, activeTetromino.relativePoints)
+    val temps = (activeT.body, activeT.relatives)
     collisionHandler(temps)
     clearRows()
   }
@@ -83,7 +81,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
   def isGameOver: Boolean = false
 
   def getCellType(p: Point): CellType = {
-    if (activeTetromino.bodyBlocks.contains(p)) activeTetromino.blockType
+    if (activeT.body.contains(p)) activeT.bodyType
     else getIfStored(p, board.storedTetrominos)
   }
 
@@ -94,30 +92,29 @@ class TetrisLogic(val randomGen: RandomGenerator,
   }
 
   def collisionHandler(tempVals: (Vector[Point], Vector[Point])): Unit = {
-    if (!isLegalMove(activeTetromino.bodyBlocks, board, board.storedTetrominos)) {
+    if (!isLegalMove(activeT.body, board, board.storedTetrominos)) {
       println("collision!")
-      activeTetromino.bodyBlocks = tempVals._1
-      activeTetromino.relativePoints = tempVals._2
+      activeT.body = tempVals._1
+      activeT.relatives = tempVals._2
     }
   }
 
   def spawnTetromino(): Unit = {
     randomNumber = randomGen.randomInt(7)
-    activeTetromino = getNewTetromino(randomNumber, getAnchor)
-    println("starter body: " + activeTetromino.bodyBlocks)
+    activeT = getNewTetromino(randomNumber, getAnchor)
+    println("starter body: " + activeT.body)
   }
 
   def clearRows(): Unit = {
     for (y <- (gridDims.height-1) to 0 by -1){
       val row = for (x <- 0 until gridDims.width) yield Point(x, y)
-      if (hasAllFrom(row)) {
+      while (hasAllFrom(row)) {
 
         println("inside")
         for (i <- board.storedTetrominos.indices) {
-          board.storedTetrominos(i).bodyBlocks = board.storedTetrominos(i).bodyBlocks.filterNot(partOf(_)(row))
-
+          board.storedTetrominos(i).body = board.storedTetrominos(i).body.filterNot(partOf(_)(row))
         }
-        activeTetromino.bodyBlocks = activeTetromino.bodyBlocks.filterNot(partOf(_)(row))
+        activeT.body = activeT.body.filterNot(partOf(_)(row))
 
         downAfterClear(row)
 
@@ -131,29 +128,40 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
     val toMoveA = centeredTetromino(Point(50, 50))
     val toMoveB = centeredTetromino(Point(50, 50))
-    toMoveA.bodyBlocks = activeTetromino.bodyBlocks.filter(higherThan(_)(row(0).y))
-    activeTetromino.bodyBlocks = activeTetromino.bodyBlocks.filterNot(higherThan(_)(row(0).y))
+    toMoveA.body = activeT.body.filter(higherThan(_)(row(0).y))
+    activeT.body = activeT.body.filterNot(higherThan(_)(row(0).y))
+
+
 
     for (i <- board.storedTetrominos.indices) {
-      val tempBlocks = board.storedTetrominos(i).bodyBlocks.filter(higherThan(_)(row(0).y))
-      board.storedTetrominos(i).bodyBlocks = board.storedTetrominos(i).bodyBlocks.filterNot(higherThan(_)(row(0).y))
+      val tempBlocks = board.storedTetrominos(i).body.filter(higherThan(_)(row(0).y))
+      board.storedTetrominos(i).body = board.storedTetrominos(i).body.filterNot(higherThan(_)(row(0).y))
+      tempBlocks.foreach(setPointType(_)(board.storedTetrominos(i).bodyType))
       for (j <- tempBlocks.indices) {
-        toMoveB.bodyBlocks = toMoveB.bodyBlocks :+ tempBlocks(j)
-        toMoveB.bodyBlocks.foreach(setPointType(_)(board.storedTetrominos(i).blockType))
+        toMoveB.body = toMoveB.body :+ tempBlocks(j)
       }
     }
 
-    toMoveB.bodyBlocks = toMoveB.moveDown()
-    toMoveA.bodyBlocks = toMoveA.moveDown()
+    toMoveA.body = toMoveA.moveDown()
+    toMoveB.body = toMoveB.moveDown()
 
-    for (i <- toMoveA.bodyBlocks.indices) {
-      activeTetromino.bodyBlocks = activeTetromino.bodyBlocks :+ toMoveA.bodyBlocks(i)
+    // println("before " + board.storedTetrominos.head.bodyBlocks)
+
+    for (i <- toMoveA.body.indices) {
+      activeT.body = activeT.body :+ toMoveA.body(i)
     }
-    for (j <- board.storedTetrominos.indices; k <- toMoveB.bodyBlocks.indices) {
-      if (toMoveB.bodyBlocks(k).celltype == board.storedTetrominos(j).blockType) {
-        board.storedTetrominos(j).bodyBlocks = board.storedTetrominos(j).bodyBlocks :+ toMoveB.bodyBlocks(j)
+
+    for (j <- toMoveB.body.indices) {
+      for (i <- board.storedTetrominos.indices) {
+        println("equation: " + toMoveB.body(j).celltype + "==" + board.storedTetrominos(i).bodyType)
+        if (toMoveB.body(j).celltype == board.storedTetrominos(i).bodyType) {
+
+          board.storedTetrominos(i).body = board.storedTetrominos(i).body :+ toMoveB.body(j)
+          println("product: " + board.storedTetrominos(i).body)
+        }
       }
     }
+    // println("after " + board.storedTetrominos.head.bodyBlocks)
 
   }
 
@@ -172,19 +180,16 @@ class TetrisLogic(val randomGen: RandomGenerator,
   def hasAllFrom(testPoints : IndexedSeq[Point]) : Boolean = {
     var tempPoints: Vector[Point] = Vector[Point]()
     for (i <- board.storedTetrominos.indices) {
-      for (j <- board.storedTetrominos(i).bodyBlocks.indices) {
-        tempPoints = tempPoints :+ board.storedTetrominos(i).bodyBlocks(j)
+      for (j <- board.storedTetrominos(i).body.indices) {
+        tempPoints = tempPoints :+ board.storedTetrominos(i).body(j)
       }
     }
 
-    for (i <- activeTetromino.bodyBlocks.indices) {
-      tempPoints = tempPoints :+ activeTetromino.bodyBlocks(i)
+    for (i <- activeT.body.indices) {
+      tempPoints = tempPoints :+ activeT.body(i)
     }
 
-    println("tempPoints: " + tempPoints)
     tempPoints = tempPoints.filter(partOf(_)(testPoints))
-
-    println("testPoints: " + testPoints)
     println(tempPoints.length + " / " + testPoints.length)
 
     if (tempPoints.length == testPoints.length) return true
@@ -215,7 +220,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
       boardPoints.contains(p)
     }
 
-    def endOfBoard(body: Vector[Point], grid : Dimensions, stored : Seq[Tetromino]): Boolean = {
+    def outOfBoard(body: Vector[Point], grid : Dimensions, stored : Seq[Tetromino]): Boolean = {
       if (!body.forall(notAtEnd(_)(grid, stored))) return true
       false
     }
@@ -225,9 +230,9 @@ class TetrisLogic(val randomGen: RandomGenerator,
       else true
     }
 
-    def atEnd(body: Vector[Point], height: Int): Boolean = {
+    def reachedEnd(body: Vector[Point], height: Int, stored: Seq[Tetromino]): Boolean = {
       for (i <- body.indices) {
-        if (body(i).y == height - 1) return true
+        if (body(i).y == height - 1 || !notStored(pDown(body(i)))(stored)) return true
       }
       false
     }
@@ -235,14 +240,14 @@ class TetrisLogic(val randomGen: RandomGenerator,
 
     def notStored(p: Point)(stored : Seq[Tetromino]) : Boolean = {
       for (i <- stored.indices) {
-        if (stored(i).bodyBlocks.contains(p)) return false
+        if (stored(i).body.contains(p)) return false
       }
       true
     }
 
     def getIfStored(p: Point, stored: Seq[Tetromino]): CellType = {
       for (i <- stored.indices) {
-        if (stored(i).bodyBlocks.contains(p)) return stored(i).blockType
+        if (stored(i).body.contains(p)) return stored(i).bodyType
       }
       Empty
     }

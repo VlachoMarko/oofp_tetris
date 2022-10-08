@@ -34,7 +34,9 @@ object Point{
   }
 
   def pDown(p: Point): Point = {
-    Point(p.x, p.y+1)
+    val newp = Point(p.x, p.y+1)
+    if (p.celltype != Empty) newp.celltype = p.celltype
+    newp
   }
 
   def pLeft(p: Point): Point = {
