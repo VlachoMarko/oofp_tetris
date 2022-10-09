@@ -81,8 +81,6 @@ class TetrisLogic(val randomGen: RandomGenerator,
     spawnTetromino()
   }
 
-
-  // TODO implement me
   def isGameOver: Boolean = gameOver
 
   def storeActive() : Unit = board.storedTetrominos = board.storedTetrominos :+ activeT
@@ -120,10 +118,6 @@ class TetrisLogic(val randomGen: RandomGenerator,
         }
         activeT.body = activeT.body.filterNot(partOf(_)(row))
         downAfterClear(row)
-        /*println("row: " + row(0).y)
-        println("body1: " + board.storedTetrominos(0).body)
-        if (board.storedTetrominos.length > 1) println("body2: " + board.storedTetrominos(1).body)
-        println("active: " + activeT.body)*/
       }
     }
 
@@ -142,6 +136,7 @@ class TetrisLogic(val randomGen: RandomGenerator,
       val tempBlocks = board.storedTetrominos(i).body.filter(higherThan(_)(row(0).y))
       board.storedTetrominos(i).body = board.storedTetrominos(i).body.filterNot(higherThan(_)(row(0).y))
       tempBlocks.foreach(setPointType(_)(board.storedTetrominos(i).bodyType))
+
       for (j <- tempBlocks.indices) {
         toMoveB.body = toMoveB.body :+ tempBlocks(j)
       }
@@ -150,16 +145,20 @@ class TetrisLogic(val randomGen: RandomGenerator,
     toMoveA.body = toMoveA.moveDown()
     toMoveB.body = toMoveB.moveDown()
 
-    for (i <- toMoveA.body.indices) {
-      activeT.body = activeT.body :+ toMoveA.body(i)
+    loadBackMoved(toMoveA, toMoveB)
     }
 
-    for (j <- toMoveB.body.indices) {
-      for (i <- board.storedTetrominos.indices) {
-        if (toMoveB.body(j).celltype == board.storedTetrominos(i).bodyType) {
-          board.storedTetrominos(i).body = board.storedTetrominos(i).body :+ toMoveB.body(j)
+  def loadBackMoved(A : Tetromino, B : Tetromino): Unit = {
+    for (i <- A.body.indices) {
+    activeT.body = activeT.body :+ A.body (i)
+    }
+
+    for (j <- B.body.indices) {
+        for (i <- board.storedTetrominos.indices) {
+          if (B.body (j).celltype == board.storedTetrominos (i).bodyType) {
+          board.storedTetrominos (i).body = board.storedTetrominos (i).body :+ B.body (j)
+          }
         }
-      }
     }
   }
 
@@ -189,7 +188,6 @@ class TetrisLogic(val randomGen: RandomGenerator,
     tempPoints = tempPoints.filter(partOf(_)(testPoints))
 
     if (tempPoints.length == testPoints.length) return true
-    // else println("tempPoints: " + tempPoints)
     false
   }
 
